@@ -1,10 +1,12 @@
-# Learning vanilla Rust
+# Learning Rust
 
-<https://doc.rust-lang.org/book/ch01-03-hello-cargo.html>
+Ce dépôt me sert à stocker mes notes dans la grande aventure qu'est l'apprentissage de Rust.
 
 ## Commandes
 
 ### Nouveau projet
+
+<https://doc.rust-lang.org/book/ch01-03-hello-cargo.html>
 
 ```shell
 cargo new project_name
