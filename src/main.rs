@@ -965,6 +965,406 @@ fn chapter_8_3() {
     println!("{:?}", map);
 }
 
+fn chapter_9() {
+    // In Cargo.toml add :
+    // [profile.release]
+    // panic = 'abort'
+    // to stop the program by default if it panics
+
+    // panic!("crash and burn");
+
+    // RUST_BACKTRACE=1 cargo run
+    // let v = vec![1, 2, 3];
+    // v[99];
+
+    use std::fs::File;
+    use std::io::ErrorKind;
+
+    // Error or result
+    let greeting_file_result = File::open("hello.txt");
+    let greeting_file = match greeting_file_result {
+        Ok(file) => file,
+        Err(error) => panic!("Problem opening the file: {:?}", error),
+    };
+    // Same as:
+    let greeting_file = File::open("hello.txt").unwrap();
+
+    // Or with except:
+    let greeting_file = File::open("hello.txt")
+        .expect("hello.txt should be included in this project");
+
+    // Result or error => result or error
+    let greeting_file = match File::open("hello.txt") {
+        Ok(file) => file,
+        Err(error) => match error.kind() {
+            ErrorKind::NotFound => match File::create("hello.txt") {
+                Ok(fc) => fc,
+                Err(e) => panic!("Problem creating the file: {:?}", e),
+            },
+            other_error => {
+                panic!("Problem opening the file: {:?}", other_error);
+            }
+        },
+    };
+
+    // same using closures and the unwrap_or_else method
+    let greeting_file = File::open("hello.txt").unwrap_or_else(|error| {
+        if error.kind() == ErrorKind::NotFound {
+            File::create("hello.txt").unwrap_or_else(|error| {
+                panic!("Problem creating the file: {:?}", error);
+            })
+        } else {
+            panic!("Problem opening the file: {:?}", error);
+        }
+    });
+
+    use std::io::Read;
+    // Error propagation
+    fn read_username_from_file() -> Result<String, io::Error> {
+        let username_file_result = File::open("hello.txt");
+
+        let mut username_file = match username_file_result {
+            Ok(file) => file,
+            Err(e) => return Err(e),
+        };
+
+        let mut username = String::new();
+
+        match username_file.read_to_string(&mut username) {
+            Ok(_) => Ok(username),
+            Err(e) => Err(e),
+        }
+    }
+
+    // Same using ? syntax
+    fn read_username_from_file_shorter() -> Result<String, io::Error> {
+        let mut username_file = File::open("hello.txt")?; // if error return error else continue
+        let mut username = String::new();
+        username_file.read_to_string(&mut username)?; // if error return error else continue
+        Ok(username)
+    }
+    fn read_username_from_file_even_shorter() -> Result<String, io::Error> {
+        let mut username = String::new();
+        File::open("hello.txt")?.read_to_string(&mut username)?;
+        Ok(username)
+    }
+    use std::fs;
+    fn read_username_from_file_even_more_shorter() -> Result<String, io::Error> {
+        fs::read_to_string("hello.txt")
+    }
+
+    use std::error::Error;
+    // if we want tu use ? in the main
+    // change signature: Ok => 0, Err => not 0 like in C
+    fn main() -> Result<(), Box<dyn Error>> {
+        let greeting_file = File::open("hello.txt")?;
+
+        Ok(())
+    }
+
+    // Example where we know it won't fail
+    use std::net::IpAddr;
+
+    let home: IpAddr = "127.0.0.1"
+        .parse()
+        .expect("Hardcoded IP address should be valid"); // returns parse Ok value
+
+    // Smart way to check values using type
+    pub struct Guess {
+        value: i32,
+    }
+    impl Guess {
+        pub fn new(value: i32) -> Guess {
+            if value < 1 || value > 100 {
+                panic!("Guess value must be between 1 and 100, got {}.", value);
+            }
+            Guess { value }
+        }
+        pub fn value(&self) -> i32 {
+            self.value
+        }
+    }
+    let guess = Guess::new(50); // won't panic
+
+}
+
+fn chapter_10_1() {
+    fn largest<T: std::cmp::PartialOrd>(list: &[T]) -> &T { // means all T having comparaison implemented
+        let mut largest = &list[0];
+        for item in list {
+            if item > largest {
+                largest = item;
+            }
+        }
+        largest
+    }
+    let number_list = vec![34, 50, 25, 100, 65];
+    let result = largest(&number_list);
+    println!("The largest number is {}", result);
+    let char_list = vec!['y', 'm', 'a', 'q'];
+    let result = largest(&char_list);
+    println!("The largest char is {}", result);
+
+    struct Point<T> {
+        x: T,
+        y: T,
+    }
+    let integer = Point { x: 5, y: 10 };
+    let float = Point { x: 1.0, y: 4.0 };
+
+    struct MultiPoint<T, U> {
+        x: T,
+        y: U,
+    }
+    let both_integer = MultiPoint { x: 5, y: 10 };
+    let both_float = MultiPoint { x: 1.0, y: 4.0 };
+    let integer_and_float = MultiPoint { x: 5, y: 4.0 };
+
+    enum Option<T> {
+        Some(T),
+        None,
+    }
+    enum Result<T, E> {
+        Ok(T),
+        Err(E),
+    }
+
+    impl<T> Point<T> {
+        fn x(&self) -> &T {
+            &self.x
+        }
+    }
+    let p = Point { x: 5, y: 10 };
+    println!("p.x = {}", p.x());
+
+    impl Point<f32> {
+        fn distance_from_origin(&self) -> f32 {
+            (self.x.powi(2) + self.y.powi(2)).sqrt()
+        }
+    }
+    let p = Point { x: 1.0, y: 4.0 };
+    println!("p.distance_from_origin = {}", p.distance_from_origin());
+
+    impl<X1, Y1> MultiPoint<X1, Y1> {
+        fn mixup<X2, Y2>(self, other: MultiPoint<X2, Y2>) -> MultiPoint<X1, Y2> {
+            MultiPoint {
+                x: self.x,
+                y: other.y,
+            }
+        }
+    }
+    let p1 = MultiPoint { x: 5, y: 10.4 };
+    let p2 = MultiPoint { x: "Hello", y: 'c' };
+    let p3 = p1.mixup(p2);
+    println!("p3.x = {}, p3.y = {}", p3.x, p3.y);
+
+}
+
+fn chapter_10_2() {
+    pub trait Summary {
+        fn summarize_author(&self) -> String;
+
+        // We can have a default implementation
+        fn summarize(&self) -> String {
+            format!("(Read more from {}...)", self.summarize_author())
+        }
+    }
+
+    pub struct NewsArticle {
+        pub headline: String,
+        pub location: String,
+        pub author: String,
+        pub content: String,
+    }
+
+    impl Summary for NewsArticle {
+        fn summarize(&self) -> String {
+            format!("{}, by {} ({})", self.headline, self.author, self.location)
+        }
+        fn summarize_author(&self) -> String {
+            format!("@{}", self.author)
+        }
+    }
+
+    pub struct Tweet {
+        pub username: String,
+        pub content: String,
+        pub reply: bool,
+        pub retweet: bool,
+    }
+
+    impl Summary for Tweet {
+        fn summarize(&self) -> String {
+            format!("{}: {}", self.username, self.content)
+        }
+        fn summarize_author(&self) -> String {
+            format!("@{}", self.username)
+        }
+    }
+
+    let tweet = Tweet {
+        username: String::from("horse_ebooks"),
+        content: String::from(
+            "of course, as you probably already know, people",
+        ),
+        reply: false,
+        retweet: false,
+    };
+    println!("1 new tweet: {}", tweet.summarize());
+
+    pub fn notify(item: &impl Summary) {
+        println!("Breaking news! {}", item.summarize());
+    }
+    notify(&tweet);
+
+    pub fn notify_generics<T: Summary>(item: &T) {
+        println!("Breaking news! {}", item.summarize());
+    }
+    notify_generics(&tweet);
+
+    // pub fn notify(item1: &impl Summary, item2: &impl Summary) {} -> can be long for complex cases
+    // pub fn notify<T: Summary>(item1 &T, item2 &T) {} -> shorter here
+
+    // Multiple implementations
+    use std::fmt::Display;
+    use std::fmt::Debug;
+    pub fn notify_multiple_impl(item: &(impl Summary + Display)) {}
+    pub fn notify_multiple_generics_impl<T: Summary + Display>(item: &T) {}
+
+    // Clearer syntax for complex cases
+    // Instead of
+    fn some_function<T: Display + Clone, U: Clone + Debug>(t: &T, u: &U) -> i32 {42}
+    // Use
+    fn some_function_clearer<T, U>(t: &T, u: &U) -> i32
+    where
+        T: Display + Clone,
+        U: Clone + Debug,
+    {
+        42
+    }
+
+    fn returns_summarizable() -> impl Summary {
+        Tweet {
+            username: String::from("horse_ebooks"),
+            content: String::from(
+                "of course, as you probably already know, people",
+            ),
+            reply: false,
+            retweet: false,
+        }
+    }
+    println!("{}", returns_summarizable().summarize());
+
+    struct Pair<T> {
+        x: T,
+        y: T,
+    }
+    impl<T: Display + PartialOrd> Pair<T> {
+        fn cmp_display(&self) { // only implemented if T has Display and PartialOrd trait
+            if self.x >= self.y {
+                println!("The largest member is x = {}", self.x);
+            } else {
+                println!("The largest member is y = {}", self.y);
+            }
+        }
+    }
+}
+
+fn chapter_10_3() {
+    // lifetime annotations describe a relationshib between references
+    // &i32        // a reference
+    // &'a i32     // a reference with an explicit lifetime
+    // &'a mut i32 // a mutable reference with an explicit lifetime
+
+    fn longest<'a>(x: &'a str, y: &'a str) -> &'a str { // all the references in the signature must have the same lifetime 'a
+        if x.len() > y.len() {
+            x
+        } else {
+            y
+        }
+    }
+    // the lifetime of the reference returned by the longest function
+    // is the same as the smaller of the lifetimes of the values
+    // referred to by the function arguments
+    // we’re specifying that the borrow checker should reject
+    // any values that don’t adhere to these constraints
+
+    let string1 = String::from("long string is long");
+    let result;
+    {
+        let string2 = String::from("xyz");
+        result = longest(string1.as_str(), string2.as_str());
+        println!("The longest string is {}", result);
+    }
+    // if we uncomment this line, the compiler tells us string2 borrowed value does not live long enough
+    // println!("The longest string is {}", result);
+
+    fn longest_bis<'a>(x: &'a str, y: &str) -> &'a str {
+        x
+    }
+    let result;
+    {
+        let string2 = String::from("xyz");
+        result = longest_bis(string1.as_str(), string2.as_str());
+    }
+    println!("The longest string is {}", result);
+
+    struct ImportantExcerpt<'a> {
+        part: &'a str,
+    }
+    let novel = String::from("Call me Ishmael. Some years ago...");
+    let first_sentence = novel.split('.').next().expect("Could not find a '.'");
+    let i = ImportantExcerpt {
+        part: first_sentence,
+    };
+
+    // Automatic lifetime anotations
+
+    // The first rule is that the compiler assigns a lifetime parameter to each parameter that’s a reference
+    // fn foo<'a>(x: &'a i32);
+    // fn foo<'a, 'b>(x: &'a i32, y: &'b i32);
+
+    // The second rule is that, if there is exactly one input lifetime parameter,
+    // that lifetime is assigned to all output lifetime parameters
+    // fn foo<'a>(x: &'a i32) -> &'a i32
+
+    // The third rule is that, if there are multiple input lifetime parameters,
+    // but one of them is &self or &mut self because this is a method,
+    // the lifetime of self is assigned to all output lifetime parameters
+
+    impl<'a> ImportantExcerpt<'a> {
+        fn level(&self) -> i32 {
+            3
+        }
+
+        fn announce_and_return_part(&self, announcement: &str) -> &str { // third rule apply here
+            println!("Attention please: {}", announcement);
+            self.part
+        }
+    }
+
+    // all string literals have static lifetime because they are always in the binary
+    let s: &'static str = "I have a static lifetime.";
+
+    // Lifetime with generics
+    use std::fmt::Display;
+    fn longest_with_an_announcement<'a, T>(
+        x: &'a str,
+        y: &'a str,
+        ann: T,
+    ) -> &'a str
+    where
+        T: Display,
+    {
+        println!("Announcement! {}", ann);
+        if x.len() > y.len() {
+            x
+        } else {
+            y
+        }
+    }
+}
+
 fn main() -> () {
     let still_testing = false;
     if still_testing {
@@ -987,7 +1387,11 @@ fn main() -> () {
         chapter_7();
         chapter_8_1();
         chapter_8_2();
-    } else {
         chapter_8_3();
+        chapter_9();
+        chapter_10_1();
+        chapter_10_2();
+    } else {
+        chapter_10_3();
     }
 }
