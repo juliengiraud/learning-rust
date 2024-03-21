@@ -1365,6 +1365,29 @@ fn chapter_10_3() {
     }
 }
 
+fn chapter_11() {
+    // cargo new adder --lib
+    // mesure performance : https://doc.rust-lang.org/unstable-book/library-features/test.html
+
+    // no multithreading
+    // cargo test -- --test-threads=1
+
+    // show standard output
+    // cargo test -- --show-output
+
+    // run specific tests
+    // cargo test keyword_in_function_name
+
+    // run ignored tests only
+    // cargo test -- --ignored
+
+    // run all tests including ignored
+    // cargo test -- --include-ignored
+
+    // run only integration tests
+    // cargo test --test integration_test
+}
+
 fn main() -> () {
     let still_testing = false;
     if still_testing {
@@ -1394,4 +1417,6 @@ fn main() -> () {
     } else {
         chapter_10_3();
     }
+
+    // todo mesure performance (see chapter 11)
 }
