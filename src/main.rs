@@ -1388,6 +1388,15 @@ fn chapter_11() {
     // cargo test --test integration_test
 }
 
+fn chapter_12() {
+    // cargo new minigrep
+    // run our program: cargo run -- searchstring example-filename.txt
+
+    // use case_sensitive or not
+    // IGNORE_CASE=1 cargo run -- to poem.txt
+    // IGNORE_CASE=0 cargo run -- to poem.txt
+}
+
 fn main() -> () {
     let still_testing = false;
     if still_testing {
@@ -1414,8 +1423,10 @@ fn main() -> () {
         chapter_9();
         chapter_10_1();
         chapter_10_2();
-    } else {
         chapter_10_3();
+        chapter_11();
+        chapter_12();
+    } else {
     }
 
     // todo mesure performance (see chapter 11)
